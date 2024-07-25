@@ -3,7 +3,7 @@ import ZoomChart from './ZoomChart'
 
 export default function Home() {
 	return (
-		<main className=''>
+		<main className='container mx-auto p-4'>
 			<ZoomChart />
 		</main>
 	)
