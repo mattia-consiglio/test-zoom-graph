@@ -72,11 +72,6 @@ const initialState: {
 	bottom2: 'dataMin-5',
 }
 
-interface MouseCoords {
-	x: number
-	y: number
-}
-
 function ZoomChart() {
 	const [data, setData] = useState(initialState.data)
 	const [left, setLeft] = useState(initialState.left)
@@ -90,47 +85,6 @@ function ZoomChart() {
 
 	const refAreaLeft = useRef<string>()
 	const refAreaRight = useRef<string>()
-
-	const lineChartRef = useRef<any>(null)
-	const [chartWidth, setChartWidth] = useState<number>(0)
-	const [chartHeight, setChartHeight] = useState<number>(0)
-	const refChartWidth = useRef<number>(lineChartRef.current?.container.offsetWidth ?? 0)
-	const refChartHeight = useRef<number>(lineChartRef.current?.container.offsetHeight ?? 0)
-
-	const handleResize = useCallback(() => {
-		const container = lineChartRef.current?.container
-		if (!container) return
-		console.log({
-			ref: container,
-			width: container.offsetWidth,
-			height: container.offsetHeight,
-		})
-		setChartWidth(container.offsetWidth)
-		setChartHeight(container.offsetHeight)
-	}, [])
-
-	useEffect(() => {
-		const handleResizeWithTimeout = () => {
-			setTimeout(() => {
-				handleResize()
-			}, 100)
-		}
-
-		window.addEventListener('resize', handleResizeWithTimeout)
-
-		return () => {
-			window.removeEventListener('resize', handleResizeWithTimeout)
-		}
-	}, [handleResize])
-
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	useEffect(() => {
-		if (lineChartRef.current !== null) {
-			console.log('useEffect')
-			if (refChartWidth.current === 0) setChartWidth(lineChartRef.current?.props.width ?? 0)
-			if (refChartHeight.current === 0) setChartHeight(lineChartRef.current?.props.height ?? 0)
-		}
-	})
 
 	const zoom = () => {
 		let areaLeft = refAreaLeft.current ?? ''
@@ -194,7 +148,6 @@ function ZoomChart() {
 			<CardContent>
 				<ChartContainer config={chartConfig}>
 					<LineChart
-						ref={lineChartRef}
 						className='select-none'
 						// accessibilityLayer
 						data={data}
@@ -247,9 +200,9 @@ function ZoomChart() {
 							yAxisId='1'
 							label={{
 								value: 'Posizione Y',
-								position: 'insideLeft',
+								position: 'insideRight',
 								offset: 0,
-								dy: -65.72,
+								dx: -65.72,
 								angle: -270,
 							}}
 						/>
@@ -264,15 +217,12 @@ function ZoomChart() {
 								value: 'Posizione X',
 								position: 'insideRight',
 								offset: 0,
-								// dy: -32.5,
-								// dx: 40,
 								angle: -270,
 							}}
 						/>
 						<ChartTooltip cursor={true} content={<ChartTooltipContent />} />
 						<Line
 							dataKey='PositionY'
-							label='Posizione Y'
 							type='monotone'
 							stroke='var(--color-desktop)'
 							strokeWidth={2}
