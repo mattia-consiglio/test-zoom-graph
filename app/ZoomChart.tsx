@@ -1,6 +1,6 @@
 'use client'
 import { Book, TrendingUp } from 'lucide-react'
-import { CartesianGrid, Line, LineChart, ReferenceArea, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, Label, Line, LineChart, ReferenceArea, XAxis, YAxis } from 'recharts'
 import {
 	Card,
 	CardContent,
@@ -15,9 +15,10 @@ import {
 	ChartTooltip,
 	ChartTooltipContent,
 } from '@/components/ui/chart'
-import { useRef, useState } from 'react'
+import { ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { data } from './data'
+import { transform } from 'next/dist/build/swc'
 const initialData = data.toSorted((a, b) => a.km - b.km)
 
 const chartConfig = {
@@ -90,6 +91,47 @@ function ZoomChart() {
 	const refAreaLeft = useRef<string>()
 	const refAreaRight = useRef<string>()
 
+	const lineChartRef = useRef<any>(null)
+	const [chartWidth, setChartWidth] = useState<number>(0)
+	const [chartHeight, setChartHeight] = useState<number>(0)
+	const refChartWidth = useRef<number>(lineChartRef.current?.container.offsetWidth ?? 0)
+	const refChartHeight = useRef<number>(lineChartRef.current?.container.offsetHeight ?? 0)
+
+	const handleResize = useCallback(() => {
+		const container = lineChartRef.current?.container
+		if (!container) return
+		console.log({
+			ref: container,
+			width: container.offsetWidth,
+			height: container.offsetHeight,
+		})
+		setChartWidth(container.offsetWidth)
+		setChartHeight(container.offsetHeight)
+	}, [])
+
+	useEffect(() => {
+		const handleResizeWithTimeout = () => {
+			setTimeout(() => {
+				handleResize()
+			}, 100)
+		}
+
+		window.addEventListener('resize', handleResizeWithTimeout)
+
+		return () => {
+			window.removeEventListener('resize', handleResizeWithTimeout)
+		}
+	}, [handleResize])
+
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	useEffect(() => {
+		if (lineChartRef.current !== null) {
+			console.log('useEffect')
+			if (refChartWidth.current === 0) setChartWidth(lineChartRef.current?.props.width ?? 0)
+			if (refChartHeight.current === 0) setChartHeight(lineChartRef.current?.props.height ?? 0)
+		}
+	})
+
 	const zoom = () => {
 		let areaLeft = refAreaLeft.current ?? ''
 		let areaRight = refAreaRight.current ?? ''
@@ -136,10 +178,9 @@ function ZoomChart() {
 		refAreaRight.current = ''
 	}
 
-	const compareCoords = (a?: MouseCoords, b?: MouseCoords) => {
-		if (!a || !b) return false
-		return a.x === b.x && a.y === b.y
-	}
+	// const applyDefault = (default :string) => {
+	// 	if ()
+	// }
 
 	return (
 		<Card>
@@ -153,12 +194,15 @@ function ZoomChart() {
 			<CardContent>
 				<ChartContainer config={chartConfig}>
 					<LineChart
+						ref={lineChartRef}
 						className='select-none'
 						// accessibilityLayer
 						data={data}
 						margin={{
-							left: 12,
-							right: 12,
+							top: 20,
+							right: 80,
+							bottom: 20,
+							left: 20,
 						}}
 						onMouseDown={e => {
 							setAreaLeft(e.activeLabel ?? '')
@@ -188,19 +232,47 @@ function ZoomChart() {
 							allowDataOverflow
 							domain={[left, right]}
 							type='number'
+							label={{
+								value: 'Km percorsi',
+								position: 'insideBottomRight',
+								offset: 0,
+								dy: 10,
+							}}
 						/>
 
-						<YAxis allowDataOverflow domain={[bottom, top]} type='number' yAxisId='1' />
+						<YAxis
+							allowDataOverflow
+							domain={[bottom, top]}
+							type='number'
+							yAxisId='1'
+							label={{
+								value: 'Posizione Y',
+								position: 'insideLeft',
+								offset: 0,
+								dy: -65.72,
+								angle: -270,
+							}}
+						/>
+
 						<YAxis
 							orientation='right'
 							allowDataOverflow
 							domain={[bottom2, top2]}
 							type='number'
 							yAxisId='2'
+							label={{
+								value: 'Posizione X',
+								position: 'insideRight',
+								offset: 0,
+								// dy: -32.5,
+								// dx: 40,
+								angle: -270,
+							}}
 						/>
 						<ChartTooltip cursor={true} content={<ChartTooltipContent />} />
 						<Line
 							dataKey='PositionY'
+							label='Posizione Y'
 							type='monotone'
 							stroke='var(--color-desktop)'
 							strokeWidth={2}
@@ -232,8 +304,8 @@ function ZoomChart() {
 							<Book /> Istruzioni di utlizzo
 						</div>
 						<div className='flex items-center gap-2 leading-none text-muted-foreground'>
-							Clicca e selziona un&apos;area da zoomare. Clicca su &quot;Zoom out&quot; per tornare
-							al grafico originale.
+							Clicca e selziona un'area da zoomare. Clicca su "Zoom out" per tornare al grafico
+							originale.
 						</div>
 					</div>
 				</div>
